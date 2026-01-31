@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-MCP server for deep codebase understanding. Provides LLMs with repository maps, symbol search, call graphs, pattern detection, and token-optimized context.
+Make any LLM a codebase expert instantly. This MCP server provides deep code intelligence through semantic search, architecture mapping, security analysis, and smart context that fits perfectly in token windows. 90% more efficient than sending raw files. Perfect for Claude, GPT, and any LLM-powered IDE.
 
 ## Installation
 
