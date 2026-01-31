@@ -20,7 +20,12 @@ from context.repo_map import generate_repo_map, generate_file_context
 from analyzer.advanced import find_all_usages, get_smart_context as smart_context_fn, semantic_search as semantic_search_fn
 from analyzer.callgraph import get_call_graph as call_graph_fn, get_architecture as architecture_fn
 from analyzer.patterns import analyze_patterns as patterns_fn
-
+from analyzer.optimization import (
+    get_compressed_context as compressed_context_fn,
+    analyze_change_impact as change_impact_fn,
+    get_recent_changes as recent_changes_fn,
+    trace_code_flow as trace_flow_fn,
+)
 
 mcp = FastMCP(
     "Code Context",
@@ -340,6 +345,81 @@ def analyze_patterns(
     """
     try:
         return patterns_fn(project_path, checks or ["all"])
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# ============ Optimization Tools ============
+
+@mcp.tool()
+def get_compressed_context(
+    project_path: Annotated[str, "Absolute path to the project root"],
+    files: Annotated[list[str], "List of relative file paths to include"],
+    mode: Annotated[str, "Mode: 'full', 'signatures', or 'smart'"] = "smart",
+) -> dict:
+    """Get multiple files in token-efficient format.
+    
+    Modes:
+    - 'full': Complete file contents
+    - 'signatures': Only function/class signatures (very compact)
+    - 'smart': Full for small files, signatures for large files
+    
+    Returns: Compressed context with estimated token count.
+    """
+    try:
+        return compressed_context_fn(project_path, files, mode)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool()
+def analyze_change_impact(
+    project_path: Annotated[str, "Absolute path to the project root"],
+    file_path: Annotated[str, "Relative path to the file to analyze"],
+) -> dict:
+    """Analyze what would be affected by changing a file.
+    
+    Returns:
+    - Direct dependents: Files that import this file
+    - Indirect dependents: Files that import dependents
+    - Risk level: low/medium/high
+    - Recommendation: How cautious to be
+    """
+    try:
+        return change_impact_fn(project_path, file_path)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool()
+def get_recent_changes(
+    project_path: Annotated[str, "Absolute path to the project root"],
+    days: Annotated[int, "Number of days to look back"] = 7,
+) -> list[dict]:
+    """Get recently modified files using git history.
+    
+    Shows what files changed recently, who changed them, and why.
+    Useful for understanding recent work and active areas.
+    """
+    try:
+        return recent_changes_fn(project_path, days)
+    except Exception as e:
+        return [{"error": str(e)}]
+
+
+@mcp.tool()
+def trace_code_flow(
+    project_path: Annotated[str, "Absolute path to the project root"],
+    entry_point: Annotated[str, "Function name to trace from"],
+    max_depth: Annotated[int, "Maximum depth to trace"] = 10,
+) -> dict:
+    """Trace execution flow from an entry point.
+    
+    Shows step-by-step what functions are called and in what order.
+    Useful for understanding "what happens when X is called?"
+    """
+    try:
+        return trace_flow_fn(project_path, entry_point, max_depth)
     except Exception as e:
         return {"error": str(e)}
 
