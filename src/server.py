@@ -17,18 +17,23 @@ from indexer.repository import scan_repository, get_repo_stats
 from indexer.ast_parser import parse_file
 from indexer.symbol_extractor import build_symbol_index, find_symbol, get_file_dependencies
 from context.repo_map import generate_repo_map, generate_file_context
+from analyzer.advanced import find_all_usages, get_smart_context as smart_context_fn, semantic_search as semantic_search_fn
 
 
 mcp = FastMCP(
     "Code Context",
     instructions="""Code Context server provides deep codebase understanding.
     
-Use these tools:
-- get_repo_map: Get condensed view of entire codebase (start here!)
-- get_file_context: Get file with related imports and usages
+Core tools:
+- get_repo_map: Condensed view of entire codebase (start here!)
+- get_file_context: File with related imports and usages
 - search_symbols: Find function/class definitions
-- get_dependencies: See what a file imports and what imports it
-- get_project_stats: Get project statistics
+- get_dependencies: What a file imports and what imports it
+
+Advanced tools (v2):
+- find_usages: Find ALL places where a symbol is used
+- smart_context: Auto-find relevant files for a question
+- semantic_search: Search code by meaning
 """
 )
 
@@ -201,6 +206,74 @@ def read_file(
         }
     except Exception as e:
         return {"error": str(e)}
+
+
+# ============ Advanced Tools (v2) ============
+
+@mcp.tool()
+def find_usages(
+    project_path: Annotated[str, "Absolute path to the project root"],
+    symbol: Annotated[str, "Symbol name to find usages of"],
+) -> list[dict]:
+    """Find ALL places where a symbol is used across the codebase.
+    
+    Unlike search_symbols (finds definitions), this finds every reference:
+    - Function calls
+    - Import statements
+    - Variable assignments
+    - Attribute access
+    
+    Returns: List of usages with file, line, content, and usage type.
+    """
+    try:
+        usages = find_all_usages(project_path, symbol)
+        return {
+            "symbol": symbol,
+            "total_usages": len(usages),
+            "usages": usages[:100],  # Limit to 100
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool()
+def smart_context(
+    project_path: Annotated[str, "Absolute path to the project root"],
+    question: Annotated[str, "Question about the codebase, e.g. 'how does auth work?'"],
+    max_tokens: Annotated[int, "Maximum tokens for context"] = 15000,
+) -> dict:
+    """Auto-find all relevant files for a question.
+    
+    Analyzes your question, extracts keywords, and finds the most
+    relevant code sections. Saves tokens by filtering out irrelevant files.
+    
+    Example: "how does authentication work?" → finds auth-related files
+    
+    Returns: Relevant files with content, sorted by relevance score.
+    """
+    try:
+        return smart_context_fn(project_path, question, max_tokens)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool()
+def semantic_search(
+    project_path: Annotated[str, "Absolute path to the project root"],
+    query: Annotated[str, "Search query, e.g. 'code that sends emails'"],
+    top_k: Annotated[int, "Number of results to return"] = 10,
+) -> list[dict]:
+    """Search code by meaning, not just keywords.
+    
+    Finds code related to your query even if exact words don't match.
+    Searches both symbol names and file contents.
+    
+    Returns: List of matches with file, line, and relevance.
+    """
+    try:
+        return semantic_search_fn(project_path, query, top_k)
+    except Exception as e:
+        return [{"error": str(e)}]
 
 
 @mcp.resource("project://{project_path}/map")
