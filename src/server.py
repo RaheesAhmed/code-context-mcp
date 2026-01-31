@@ -18,6 +18,8 @@ from indexer.ast_parser import parse_file
 from indexer.symbol_extractor import build_symbol_index, find_symbol, get_file_dependencies
 from context.repo_map import generate_repo_map, generate_file_context
 from analyzer.advanced import find_all_usages, get_smart_context as smart_context_fn, semantic_search as semantic_search_fn
+from analyzer.callgraph import get_call_graph as call_graph_fn, get_architecture as architecture_fn
+from analyzer.patterns import analyze_patterns as patterns_fn
 
 
 mcp = FastMCP(
@@ -274,6 +276,72 @@ def semantic_search(
         return semantic_search_fn(project_path, query, top_k)
     except Exception as e:
         return [{"error": str(e)}]
+
+
+# ============ Deep Analysis Tools ============
+
+@mcp.tool()
+def get_call_graph(
+    project_path: Annotated[str, "Absolute path to the project root"],
+    function_name: Annotated[str, "Function name to analyze"],
+    direction: Annotated[str, "Direction: 'callers', 'callees', or 'both'"] = "both",
+    depth: Annotated[int, "Depth of analysis"] = 3,
+) -> dict:
+    """Build call graph for a function.
+    
+    Shows:
+    - What functions call this function (callers)
+    - What functions this function calls (callees)
+    - Mermaid diagram for visualization
+    
+    Returns: Call graph with callers, callees, and Mermaid diagram.
+    """
+    try:
+        return call_graph_fn(project_path, function_name, direction, depth)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@mcp.tool()
+def get_architecture(
+    project_path: Annotated[str, "Absolute path to the project root"],
+    format: Annotated[str, "Output format: 'mermaid' or 'ascii'"] = "mermaid",
+) -> str:
+    """Generate architecture diagram showing project layers.
+    
+    Auto-detects:
+    - UI layer (components, pages)
+    - API layer (routes, endpoints)
+    - Business logic (services)
+    - Data layer (models, database)
+    
+    Returns: Mermaid or ASCII diagram of project architecture.
+    """
+    try:
+        return architecture_fn(project_path, format)
+    except Exception as e:
+        return f"Error: {e}"
+
+
+@mcp.tool()
+def analyze_patterns(
+    project_path: Annotated[str, "Absolute path to the project root"],
+    checks: Annotated[list[str], "Check categories: 'security', 'performance', 'quality', or 'all'"] = None,
+) -> dict:
+    """Analyze codebase for patterns and issues.
+    
+    Detects:
+    - Security: Hardcoded secrets, SQL injection, etc.
+    - Performance: N+1 queries, blocking I/O, etc.
+    - Quality: God objects, long functions, etc.
+    - Design patterns: Singleton, Factory, Observer, etc.
+    
+    Returns: Summary of issues and detected patterns.
+    """
+    try:
+        return patterns_fn(project_path, checks or ["all"])
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @mcp.resource("project://{project_path}/map")
