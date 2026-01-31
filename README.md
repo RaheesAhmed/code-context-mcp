@@ -3,15 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-MCP server for codebase understanding. Provides LLM-friendly repository maps, symbol search, and dependency analysis through AST parsing.
-
-## Features
-
-- **Repository Map**: Generate condensed codebase overview with all symbols and signatures
-- **Symbol Search**: Find function and class definitions across the codebase
-- **Dependency Analysis**: Track imports and file relationships
-- **Multi-Language**: Python, TypeScript, JavaScript support via Tree-sitter
-- **Gitignore Aware**: Automatically respects `.gitignore` patterns
+MCP server for deep codebase understanding. Provides LLMs with repository maps, symbol search, call graphs, pattern detection, and token-optimized context.
 
 ## Installation
 
@@ -23,15 +15,14 @@ uv sync
 
 ## Usage
 
-### Development Mode
-
 ```bash
+# Development mode with inspector
 uv run mcp dev src/server.py
 ```
 
-### Claude Desktop Integration
+### Claude Desktop
 
-Add to your `claude_desktop_config.json`:
+Add to `claude_desktop_config.json`:
 
 ```json
 {
@@ -44,90 +35,64 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-## Available Tools
+## Tools (16 Total)
 
-### get_repo_map
+### Core Tools
 
-Generate a condensed map of the entire codebase showing all classes, functions, and their signatures.
+| Tool | Description |
+|------|-------------|
+| `get_repo_map` | Condensed map of all symbols in entire codebase |
+| `get_file_context` | File content with related imports |
+| `search_symbols` | Find function/class definitions |
+| `get_dependencies` | Import relationships for a file |
+| `get_project_stats` | File count, lines, language breakdown |
+| `read_file` | Read file with optional line range |
+
+### Advanced Search
+
+| Tool | Description |
+|------|-------------|
+| `find_usages` | Find ALL places where a symbol is used |
+| `smart_context` | Auto-find relevant files for a question |
+| `semantic_search` | Search code by meaning, not keywords |
+
+### Deep Analysis
+
+| Tool | Description |
+|------|-------------|
+| `get_call_graph` | Trace callers/callees with Mermaid diagram |
+| `get_architecture` | Auto-generate project layer diagram |
+| `analyze_patterns` | Detect security, performance, quality issues |
+
+### Optimization
+
+| Tool | Description |
+|------|-------------|
+| `get_compressed_context` | Token-efficient multi-file context |
+| `analyze_change_impact` | What breaks when you change a file |
+| `get_recent_changes` | Git history - recently modified files |
+| `trace_code_flow` | Step-by-step execution path tracing |
+
+## Examples
 
 ```python
+# See entire codebase structure
 get_repo_map(project_path="/path/to/project")
-```
 
-**Output:**
-```
-# Repository Map: project-name
+# Find all usages of a function
+find_usages(project_path="/path/to/project", symbol="authenticate")
 
-## src/
-### main.py
-  def main() -> None
-  class Application:
-    def run(self) -> None
-    def configure(config: dict) -> None
-```
+# Auto-find relevant code for a question
+smart_context(project_path="/path/to/project", question="how does auth work?")
 
-### get_file_context
+# Build call graph with visualization
+get_call_graph(project_path="/path/to/project", function_name="main")
 
-Get file content with related imports and files that use it.
+# Analyze before making changes
+analyze_change_impact(project_path="/path/to/project", file_path="src/core.py")
 
-```python
-get_file_context(project_path="/path/to/project", file_path="src/main.py")
-```
-
-### search_symbols
-
-Find all occurrences of a function, class, or method.
-
-```python
-search_symbols(project_path="/path/to/project", symbol_name="parse_file")
-```
-
-### get_dependencies
-
-Get import relationships for a specific file.
-
-```python
-get_dependencies(project_path="/path/to/project", file_path="src/main.py")
-```
-
-### get_project_stats
-
-Get project statistics including file counts and language breakdown.
-
-```python
-get_project_stats(project_path="/path/to/project")
-```
-
-### read_file
-
-Read file content with optional line range.
-
-```python
-read_file(project_path="/path/to/project", file_path="src/main.py", start_line=1, end_line=50)
-```
-
-## How It Works
-
-1. **AST Parsing**: Uses Tree-sitter to parse source files into Abstract Syntax Trees
-2. **Symbol Extraction**: Extracts functions, classes, methods, and imports from ASTs
-3. **Dependency Mapping**: Resolves import statements to build file relationship graphs
-4. **Repository Map**: Generates condensed output optimized for LLM context windows
-
-## Project Structure
-
-```
-code-context-mcp/
-├── src/
-│   ├── server.py           # MCP server with tool definitions
-│   ├── indexer/
-│   │   ├── repository.py   # File scanning with gitignore support
-│   │   ├── ast_parser.py   # Tree-sitter AST parsing
-│   │   └── symbol_extractor.py
-│   └── context/
-│       └── repo_map.py     # Repository map generation
-├── pyproject.toml
-├── LICENSE
-└── README.md
+# Trace execution flow
+trace_code_flow(project_path="/path/to/project", entry_point="handleRequest")
 ```
 
 ## Requirements
@@ -137,7 +102,7 @@ code-context-mcp/
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License - see [LICENSE](LICENSE)
 
 ## Author
 
